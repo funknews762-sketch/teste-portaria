@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IJ Tec — Implantação de Portaria Remota, CFTV & Infraestrutura de Segurança</title>
+<meta name="description" content="Implantação de portaria remota, câmeras de segurança (CFTV) e infraestrutura técnica completa para condomínios, empresas e comércios.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#07090a;
+    --bg-1:#0d1113;
+    --bg-2:#12171a;
+    --panel-border: rgba(238,242,243,0.08);
+    --panel-border-strong: rgba(238,242,243,0.16);
+    --text-0:#eef2f3;
+    --text-1:#a7b0b3;
+    --text-2:#727c80;
+    --brass:#c69a5c;
+    --cyan:#57b3c2;
+    --cyan-bright:#7fd2df;
+    --cyan-dim:#20393d;
+    --status-green:#5fbf82;
+    --status-red:#d9645a;
+    --radius-s:2px;
+    --radius-m:3px;
+    --ease:cubic-bezier(.16,.8,.24,1);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+  }
+
+  body{
+    background:var(--bg-0);
+    color:var(--text-0);
+    font-family:'Inter', sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  h1,h2,h3,h4{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--text-0);
+  }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  a{color:inherit; text-decoration:none;}
+  ul{list-style:none;}
+  img,svg{display:block; max-width:100%;}
+  button{font-family:inherit; cursor:pointer;}
+  input,textarea{font-family:inherit;}
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--cyan-bright);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:20px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:22px; height:1px;
+    background:var(--cyan-bright);
+    display:inline-block;
+  }
+
+  /* ---------- NAV ---------- */
+  header.site-nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(7,9,10,0.4);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid transparent;
+    transition:background 0.4s var(--ease), border-color 0.4s var(--ease), padding 0.4s var(--ease);
+    padding:26px 0;
+  }
+  header.site-nav.scrolled{
+    background:rgba(7,9,10,0.88);
+    border-bottom-color:var(--panel-border);
+    padding:16px 0;
+  }
+  .nav-inner{ display:flex; align-items:center; justify-content:space-between; gap:24px; }
+  .brand{ display:flex; align-items:baseline; gap:10px; }
+  .brand-mark{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:22px; letter-spacing:0.02em; }
+  .brand-mark span{ color:var(--brass); }
+  .brand-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--text-2); display:none;
+  }
+  @media(min-width:860px){ .brand-tag{display:block;} }
+
+  .nav-tabs{ display:none; align-items:center; gap:2px; }
+  @media(min-width:860px){ .nav-tabs{display:flex;} }
+  .nav-tabs a{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--text-1); padding:10px 16px; position:relative;
+    transition:color 0.25s var(--ease);
+  }
+  .nav-tabs a::after{
+    content:''; position:absolute; left:16px; right:16px; bottom:4px; height:1px;
+    background:var(--cyan-bright); transform:scaleX(0); transform-origin:left;
+    transition:transform 0.3s var(--ease);
+  }
+  .nav-tabs a:hover{ color:var(--text-0); }
+  .nav-tabs a.active{ color:var(--cyan-bright); }
+  .nav-tabs a.active::after{ transform:scaleX(1); }
+
+  .nav-cta{
+    display:none; align-items:center; gap:8px;
+    background:var(--cyan); color:#07161a;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.06em; text-transform:uppercase;
+    font-weight:500; padding:11px 20px; border-radius:var(--radius-s); border:1px solid var(--cyan);
+    transition:background 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  @media(min-width:860px){ .nav-cta{display:inline-flex;} }
+  .nav-cta:hover{ background:var(--cyan-bright); border-color:var(--cyan-bright); transform:translateY(-1px); }
+
+  .nav-burger{
+    display:flex; background:none; border:1px solid var(--panel-border-strong); border-radius:var(--radius-s);
+    padding:10px; flex-direction:column; gap:4px; width:38px; height:38px; align-items:center; justify-content:center;
+  }
+  @media(min-width:860px){ .nav-burger{display:none;} }
+  .nav-burger span{ width:16px; height:1px; background:var(--text-0); display:block; }
+
+  .mobile-menu{
+    position:fixed; inset:0; z-index:99; background:var(--bg-0);
+    display:flex; flex-direction:column; justify-content:center; padding:32px;
+    transform:translateY(-100%); transition:transform 0.45s var(--ease);
+  }
+  .mobile-menu.open{ transform:translateY(0); }
+  .mobile-menu a{
+    font-family:'Space Grotesk', sans-serif; font-size:32px; font-weight:600; padding:14px 0;
+    border-bottom:1px solid var(--panel-border); color:var(--text-1);
+  }
+  .mobile-menu a.active{ color:var(--cyan-bright); }
+  .mobile-menu .close-menu{
+    position:absolute; top:26px; right:32px; background:none; border:1px solid var(--panel-border-strong);
+    color:var(--text-0); width:38px; height:38px; border-radius:var(--radius-s); font-size:18px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative; padding:180px 0 120px; overflow:hidden;
+    border-bottom:1px solid var(--panel-border);
+  }
+  .hero::before{
+    content:''; position:absolute; top:-20%; right:-10%; width:60%; height:70%;
+    background:radial-gradient(circle, rgba(87,179,194,0.10), transparent 70%);
+    pointer-events:none;
+  }
+  .hero-grid{ display:grid; grid-template-columns:1fr; gap:64px; align-items:center; }
+  @media(min-width:960px){ .hero-grid{ grid-template-columns:1.05fr 0.95fr; gap:40px; } }
+
+  .hero h1{ font-size:clamp(36px, 5vw, 58px); line-height:1.08; margin-bottom:26px; }
+  .hero h1 em{ font-style:normal; color:var(--cyan-bright); }
+  .hero p.lead{ font-size:17px; color:var(--text-1); max-width:520px; margin-bottom:40px; }
+  .hero-actions{ display:flex; flex-wrap:wrap; gap:16px; margin-bottom:56px; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:16px 26px; border-radius:var(--radius-s);
+    transition:transform 0.25s var(--ease), background 0.25s var(--ease), border-color 0.25s var(--ease), color 0.25s var(--ease);
+    border:1px solid transparent;
+  }
+  .btn-primary{ background:var(--cyan); color:#07161a; border-color:var(--cyan); font-weight:500; }
+  .btn-primary:hover{ background:var(--cyan-bright); border-color:var(--cyan-bright); transform:translateY(-2px); }
+  .btn-ghost{ background:transparent; color:var(--text-0); border-color:var(--panel-border-strong); }
+  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan-bright); transform:translateY(-2px); }
+  .btn-whatsapp{ background:#1c2b21; color:#8fe0a8; border-color:rgba(143,224,168,0.25); }
+  .btn-whatsapp:hover{ background:#213c29; border-color:#8fe0a8; transform:translateY(-2px); }
+
+  .hero-meta{ display:flex; gap:32px; flex-wrap:wrap; }
+  .hero-meta div{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--text-2); border-left:1px solid var(--panel-border-strong); padding-left:14px; max-width:170px;
+  }
+
+  /* ---------- monitor wall (hero signature visual) ---------- */
+  .wall-wrap{
+    position:relative;
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius-m);
+    background:linear-gradient(160deg, var(--bg-1), var(--bg-0));
+    padding:16px;
+  }
+  .wall-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr 1fr;
+    gap:10px;
+    aspect-ratio:6/5;
+  }
+  .cam-panel{
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--panel-border-strong);
+    border-radius:2px;
+    background:
+      repeating-linear-gradient(0deg, rgba(87,179,194,0.05) 0px, rgba(87,179,194,0.05) 1px, transparent 1px, transparent 22px),
+      repeating-linear-gradient(90deg, rgba(87,179,194,0.05) 0px, rgba(87,179,194,0.05) 1px, transparent 1px, transparent 22px),
+      #0a0d0f;
+    padding:8px 9px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .cam-panel::after{
+    content:'';
+    position:absolute;
+    left:0; right:0; height:36%;
+    background:linear-gradient(180deg, transparent, rgba(87,179,194,0.16), transparent);
+    animation:camscan 5.5s linear infinite;
+    animation-delay:var(--d, 0s);
+  }
+  @keyframes camscan{
+    0%{ top:-40%; }
+    100%{ top:110%; }
+  }
+  .cam-top{ display:flex; align-items:center; justify-content:space-between; z-index:1; }
+  .cam-id{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.04em;
+    color:var(--text-1);
+  }
+  .cam-status{
+    display:flex; align-items:center; gap:5px;
+    font-family:'IBM Plex Mono', monospace; font-size:8.5px; letter-spacing:0.06em;
+    color:var(--status-green); text-transform:uppercase;
+  }
+  .cam-status .dot{
+    width:5px; height:5px; border-radius:50%; background:var(--status-green);
+    animation:blink 2.4s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{ opacity:1; } 50%{ opacity:0.25; } }
+  .cam-bottom{
+    font-family:'IBM Plex Mono', monospace; font-size:9px; color:var(--text-2); z-index:1;
+  }
+  .wall-caption{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:14px;
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--text-2);
+  }
+  .wall-caption .rec{ display:flex; align-items:center; gap:6px; color:var(--status-red); }
+  .wall-caption .rec .dot{
+    width:6px; height:6px; border-radius:50%; background:var(--status-red);
+    animation:blink 1.6s ease-in-out infinite;
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{ padding:110px 0; border-bottom:1px solid var(--panel-border); }
+  .section-head{ max-width:640px; margin-bottom:64px; }
+  .section-head h2{ font-size:clamp(28px,3.6vw,40px); line-height:1.15; }
+  .section-head p{ color:var(--text-1); font-size:16px; margin-top:18px; max-width:560px; }
+
+  .reveal{ opacity:0; transform:translateY(24px); transition:opacity 0.8s var(--ease), transform 0.8s var(--ease); }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  /* ---------- SOBRE ---------- */
+  #sobre .sobre-grid{ display:grid; grid-template-columns:1fr; gap:56px; }
+  @media(min-width:900px){ #sobre .sobre-grid{ grid-template-columns:1fr 1fr; gap:80px; } }
+  #sobre .sobre-copy p{ color:var(--text-1); margin-bottom:20px; font-size:16px; max-width:520px; }
+  #sobre .sobre-copy p:first-of-type{ color:var(--text-0); font-size:19px; font-family:'Space Grotesk',sans-serif; font-weight:500; line-height:1.5; }
+
+  .pillar-list{ display:flex; flex-direction:column; gap:0; border-top:1px solid var(--panel-border); }
+  .pillar-list li{ display:flex; align-items:baseline; gap:20px; padding:26px 0; border-bottom:1px solid var(--panel-border); }
+  .pillar-list .idx{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cyan-bright); width:26px; flex-shrink:0; }
+  .pillar-list h4{ font-size:17px; margin-bottom:6px; }
+  .pillar-list p{ color:var(--text-1); font-size:14.5px; }
+
+  /* ---------- SERVICOS ---------- */
+  .service-grid{
+    display:grid; grid-template-columns:1fr; gap:1px;
+    background:var(--panel-border); border:1px solid var(--panel-border);
+  }
+  @media(min-width:700px){ .service-grid{ grid-template-columns:1fr 1fr; } }
+  @media(min-width:1040px){ .service-grid{ grid-template-columns:1fr 1fr 1fr; } }
+  .service-card{ background:var(--bg-0); padding:38px 32px; transition:background 0.3s var(--ease); position:relative; }
+  .service-card:hover{ background:var(--bg-1); }
+  .service-card .icon{ width:38px; height:38px; margin-bottom:26px; color:var(--cyan-bright); }
+  .service-card h3{ font-size:19px; margin-bottom:12px; }
+  .service-card p{ color:var(--text-1); font-size:14.5px; }
+
+  /* ---------- DIFERENCIAIS ---------- */
+  .dif-grid{ display:grid; grid-template-columns:1fr; gap:48px; }
+  @media(min-width:700px){ .dif-grid{ grid-template-columns:1fr 1fr; } }
+  .dif-item{ display:flex; gap:22px; }
+  .dif-item .icon{
+    width:44px; height:44px; flex-shrink:0; color:var(--brass);
+    border:1px solid var(--panel-border-strong); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .dif-item h4{ font-size:18px; margin-bottom:8px; }
+  .dif-item p{ color:var(--text-1); font-size:14.5px; }
+
+  /* ---------- CONTATO ---------- */
+  #contato{ border-bottom:none; }
+  .contato-grid{ display:grid; grid-template-columns:1fr; gap:56px; }
+  @media(min-width:960px){ .contato-grid{ grid-template-columns:1fr 0.85fr; gap:64px; } }
+
+  .form-panel{ background:var(--bg-1); border:1px solid var(--panel-border); border-radius:var(--radius-m); padding:40px; }
+  @media(max-width:520px){ .form-panel{ padding:28px 22px; } }
+
+  .field{ margin-bottom:22px; }
+  .field label{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--text-2); margin-bottom:10px;
+  }
+  .field input[type=text], .field input[type=tel], .field input[type=number], .field textarea{
+    width:100%; background:var(--bg-0); border:1px solid var(--panel-border-strong); border-radius:var(--radius-s);
+    color:var(--text-0); padding:13px 14px; font-size:15px; transition:border-color 0.25s var(--ease);
+  }
+  .field input:focus, .field textarea:focus{ outline:none; border-color:var(--cyan); }
+  .field textarea{ resize:vertical; min-height:88px; }
+
+  .field-row{ display:grid; grid-template-columns:1fr; gap:22px; }
+  @media(min-width:520px){ .field-row{ grid-template-columns:1fr 1fr; } }
+
+  .radio-group, .check-group{ display:flex; flex-wrap:wrap; gap:10px; }
+  .pill-option{ position:relative; }
+  .pill-option input{ position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; margin:0; }
+  .pill-option span{
+    display:inline-flex; align-items:center; padding:9px 16px; border:1px solid var(--panel-border-strong);
+    border-radius:20px; font-size:13.5px; color:var(--text-1); transition:all 0.2s var(--ease);
+  }
+  .pill-option input:checked + span{
+    border-color:var(--cyan); color:var(--cyan-bright); background:rgba(87,179,194,0.08);
+  }
+
+  .form-submit{ width:100%; justify-content:center; margin-top:8px; }
+  .form-note{ font-size:12.5px; color:var(--text-2); margin-top:16px; line-height:1.6; }
+
+  .direct-panel{ display:flex; flex-direction:column; gap:28px; }
+  .direct-card{ border:1px solid var(--panel-border); border-radius:var(--radius-m); padding:32px; }
+  .direct-card h3{ font-size:19px; margin-bottom:10px; }
+  .direct-card p{ color:var(--text-1); font-size:14.5px; margin-bottom:22px; }
+
+  .contact-lines{ display:flex; flex-direction:column; gap:16px; }
+  .contact-lines a, .contact-lines div{ display:flex; align-items:center; gap:12px; font-size:14.5px; color:var(--text-1); }
+  .contact-lines .lbl{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--text-2); width:64px; flex-shrink:0;
+  }
+  .contact-lines a:hover{ color:var(--cyan-bright); }
+
+  /* ---------- FOOTER ---------- */
+  footer{ padding:56px 0 40px; }
+  .footer-inner{ display:flex; flex-direction:column; gap:32px; }
+  @media(min-width:760px){ .footer-inner{ flex-direction:row; justify-content:space-between; align-items:flex-end; } }
+  .footer-brand .brand-mark{ font-size:19px; margin-bottom:8px; }
+  .footer-brand p{ color:var(--text-2); font-size:13px; max-width:300px; }
+  .footer-links{ display:flex; gap:28px; flex-wrap:wrap; }
+  .footer-links a{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-2);
+  }
+  .footer-links a:hover{ color:var(--cyan-bright); }
+  .footer-bottom{ margin-top:40px; padding-top:24px; border-top:1px solid var(--panel-border); font-size:12px; color:var(--text-2); }
+</style>
+</head>
+<body>
+
+<header class="site-nav" id="siteNav">
+  <div class="wrap nav-inner">
+    <div class="brand">
+      <div class="brand-mark">IJ <span>TEC</span></div>
+      <div class="brand-tag">segurança &amp; infraestrutura</div>
+    </div>
+    <nav class="nav-tabs" id="navTabs">
+      <a href="#inicio" class="active">Início</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#diferenciais">Diferenciais</a>
+    </nav>
+    <a href="#contato" class="nav-cta">Fale conosco</a>
+    <button class="nav-burger" id="burgerBtn" aria-label="Abrir menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="close-menu" id="closeMenu" aria-label="Fechar menu">✕</button>
+  <a href="#inicio">Início</a>
+  <a href="#sobre">Sobre</a>
+  <a href="#servicos">Serviços</a>
+  <a href="#diferenciais">Diferenciais</a>
+  <a href="#contato">Fale conosco</a>
+</div>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Implantação de Portaria remota · CFTV · Infraestrutura</div>
+        <h1>Monitoramento que <em>nunca tira os olhos</em> do que importa.</h1>
+        <p class="lead">A IJ Tec projeta e implanta sistemas de portaria remota, câmeras de segurança e toda a infraestrutura técnica necessária — para condomínios, empresas e comércios que exigem confiabilidade real.</p>
+        <div class="hero-actions">
+          <a href="#servicos" class="btn btn-primary">Conhecer serviços</a>
+          <a href="#contato" class="btn btn-ghost">Fale conosco</a>
+        </div>
+        <div class="hero-meta">
+          <div>Projeto técnico do estudo à implantação</div>
+          <div>Rede, energia e armazenamento dimensionados</div>
+          <div>Suporte técnico e manutenção contínua</div>
+        </div>
+      </div>
+
+      <div class="wall-wrap">
+        <div class="wall-grid">
+          <div class="cam-panel" style="--d:0s">
+            <div class="cam-top"><span class="cam-id">CAM 01 · ACESSO PRINCIPAL</span><span class="cam-status"><i class="dot"></i>ON</span></div>
+            <div class="cam-bottom">1080p · IR</div>
+          </div>
+          <div class="cam-panel" style="--d:.9s">
+            <div class="cam-top"><span class="cam-id">CAM 02 · PERÍMETRO</span><span class="cam-status"><i class="dot"></i>ON</span></div>
+            <div class="cam-bottom">1080p · IR</div>
+          </div>
+          <div class="cam-panel" style="--d:1.8s">
+            <div class="cam-top"><span class="cam-id">CAM 03 · GARAGEM</span><span class="cam-status"><i class="dot"></i>ON</span></div>
+            <div class="cam-bottom">4MP · IR</div>
+          </div>
+          <div class="cam-panel" style="--d:2.7s">
+            <div class="cam-top"><span class="cam-id">CAM 04 · PORTARIA</span><span class="cam-status"><i class="dot"></i>ON</span></div>
+            <div class="cam-bottom">4MP · IR</div>
+          </div>
+          <div class="cam-panel" style="--d:3.6s">
+            <div class="cam-top"><span class="cam-id">CAM 05 · ÁREA COMUM</span><span class="cam-status"><i class="dot"></i>ON</span></div>
+            <div class="cam-bottom">1080p · IR</div>
+          </div>
+          <div class="cam-panel" style="--d:4.5s">
+            <div class="cam-top"><span class="cam-id">CAM 06 · FUNDOS</span><span class="cam-status"><i class="dot"></i>ON</span></div>
+            <div class="cam-bottom">1080p · IR</div>
+          </div>
+        </div>
+        <div class="wall-caption">
+          <span>Central de monitoramento — ilustrativo</span>
+          <span class="rec"><i class="dot"></i>REC</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOBRE -->
+  <section id="sobre">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Sobre a IJ Tec</div>
+        <h2>Infraestrutura de segurança pensada de ponta a ponta.</h2>
+      </div>
+      <div class="sobre-grid">
+        <div class="sobre-copy reveal">
+          <p>Uma portaria remota eficiente depende de mais do que câmeras — depende de rede estável, energia redundante e um projeto bem dimensionado desde o primeiro dia.</p>
+          <p>Na IJ Tec, cuidamos de todo esse ecossistema: cabeamento estruturado, servidores de gravação, conectividade e os equipamentos de captação, entregando um sistema robusto e pronto para operar continuamente.</p>
+          <p>Atendemos condomínios, empresas e comércios, do projeto técnico à instalação, com equipamentos de alta performance e suporte contínuo após a entrega.</p>
+        </div>
+        <ul class="pillar-list reveal">
+          <li>
+            <span class="idx">01</span>
+            <div><h4>Projeto técnico dimensionado</h4><p>Estudo de cobertura, pontos cegos e capacidade de rede antes da instalação.</p></div>
+          </li>
+          <li>
+            <span class="idx">02</span>
+            <div><h4>Instalação estruturada</h4><p>Cabeamento, energia e fixação executados seguindo normas técnicas, sem improviso.</p></div>
+          </li>
+          <li>
+            <span class="idx">03</span>
+            <div><h4>Suporte e manutenção</h4><p>Acompanhamento técnico contínuo para manter o sistema operando com estabilidade.</p></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVIÇOS -->
+  <section id="servicos">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">O que fazemos</div>
+        <h2>Serviços de segurança e infraestrutura</h2>
+        <p>Sistemas completos de monitoramento e portaria remota, da captação de imagem à infraestrutura que sustenta tudo isso.</p>
+      </div>
+    </div>
+    <div class="wrap" style="padding:0 32px;">
+      <div class="service-grid reveal">
+        <div class="service-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 8h13v8H3zM16 10l5-3v10l-5-3z"/></svg>
+          <h3>Implantação de Portaria remota</h3>
+          <p>Implantamos todo o sistema necessário para o atendimento de visitantes e liberação de acessos à distância, com comunicação integrada ao morador ou responsável.</p>
+        </div>
+        <div class="service-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="6" width="14" height="12" rx="1"/><path d="M17 10l4-2v8l-4-2z"/><circle cx="10" cy="12" r="2.4"/></svg>
+          <h3>CFTV de alta resolução</h3>
+          <p>Câmeras internas e externas com gravação contínua e cobertura estratégica de todo o perímetro.</p>
+        </div>
+        <div class="service-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>
+          <h3>Controle de acesso</h3>
+          <p>Cancelas, catracas, biometria e tags de aproximação integrados ao sistema de monitoramento.</p>
+        </div>
+        <div class="service-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 12h5M12 12l5-5M12 12l5 5"/></svg>
+          <h3>Infraestrutura de rede</h3>
+          <p>Cabeamento estruturado, switches e conectividade dimensionados para suportar todo o sistema.</p>
+        </div>
+        <div class="service-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="3" width="16" height="6" rx="1"/><rect x="4" y="15" width="16" height="6" rx="1"/><circle cx="8" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg>
+          <h3>Central de gravação e armazenamento</h3>
+          <p>Servidores locais ou em nuvem, com redundância e tempo de retenção configurável.</p>
+        </div>
+        <div class="service-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+          <h3>Energia e redundância</h3>
+          <p>Nobreaks e proteção elétrica para manter o sistema operando mesmo em quedas de energia.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIFERENCIAIS -->
+  <section id="diferenciais">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Por que a IJ Tec</div>
+        <h2>Segurança que começa no projeto técnico.</h2>
+      </div>
+      <div class="dif-grid reveal">
+        <div class="dif-item">
+          <div class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 21V9"/></svg></div>
+          <div><h4>Projeto técnico completo</h4><p>Do estudo de viabilidade à entrega, cada ponto de captação e cada trecho de rede são planejados.</p></div>
+        </div>
+        <div class="dif-item">
+          <div class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div><h4>Equipamentos de alta performance</h4><p>Trabalhamos com marcas de referência em captação de imagem, rede e armazenamento.</p></div>
+        </div>
+        <div class="dif-item">
+          <div class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3l18 18M8 8a4 4 0 015.5 5.5"/><path d="M12 2a10 10 0 019.5 13.5"/></svg></div>
+          <div><h4>Instalação sem improviso</h4><p>Infraestrutura executada seguindo normas técnicas e boas práticas de cabeamento e fixação.</p></div>
+        </div>
+        <div class="dif-item">
+          <div class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+          <div><h4>Suporte contínuo</h4><p>Atendimento técnico para manutenção, expansão e ajustes do sistema após a instalação.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTATO -->
+  <section id="contato">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Fale conosco</div>
+        <h2>Vamos planejar sua infraestrutura de segurança.</h2>
+        <p>Preencha os dados abaixo para um pré-orçamento. Sua solicitação é enviada diretamente para o nosso WhatsApp e retornamos com os próximos passos.</p>
+      </div>
+
+      <div class="contato-grid">
+        <form class="form-panel reveal" id="orcamentoForm">
+          <div class="field-row">
+            <div class="field">
+              <label for="nome">Nome completo</label>
+              <input type="text" id="nome" required placeholder="Seu nome">
+            </div>
+            <div class="field">
+              <label for="telefone">Telefone / WhatsApp</label>
+              <input type="tel" id="telefone" required placeholder="(13) 90000-0000">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Tipo de local</label>
+            <div class="radio-group">
+              <label class="pill-option"><input type="radio" name="tipo" value="Condomínio" checked><span>Condomínio</span></label>
+              <label class="pill-option"><input type="radio" name="tipo" value="Empresa"><span>Empresa</span></label>
+              <label class="pill-option"><input type="radio" name="tipo" value="Comércio"><span>Comércio</span></label>
+              <label class="pill-option"><input type="radio" name="tipo" value="Outro"><span>Outro</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="cameras">Número aproximado de metros quadrados — opcional</label>
+            <input type="number" id="m²" placeholder="Ex: 100">
+          </div>
+
+          <div class="field">
+            <label for="cameras">Número aproximado de câmeras — opcional</label>
+            <input type="number" id="cameras" placeholder="Ex: 8">
+          </div>
+
+          <div class="field">
+            <label>Áreas de interesse</label>
+            <div class="check-group" id="interesseGroup">
+              <label class="pill-option"><input type="checkbox" value="Implantação de Portaria remota"><span>Implantação de Portaria remota</span></label>
+              <label class="pill-option"><input type="checkbox" value="CFTV"><span>CFTV</span></label>
+              <label class="pill-option"><input type="checkbox" value="Infraestrutura de rede"><span>Infraestrutura de rede</span></label>
+              <label class="pill-option"><input type="checkbox" value="Central de gravação"><span>Central de gravação</span></label>
+              <label class="pill-option"><input type="checkbox" value="Energia e redundância"><span>Energia e redundância</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="mensagem">Conte mais sobre o projeto — opcional</label>
+            <textarea id="mensagem" placeholder="Ex: condomínio com portaria física a converter para remota..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary form-submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11 11 0 003.6 17L2 22l5.2-1.6a11 11 0 0013.3-16.9zM12 20a9 9 0 01-4.6-1.3l-.3-.2-3.1.9.9-3-.2-.3A9 9 0 1112 20zm5-6.7c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1s-.7.9-.9 1.1-.3.2-.6.1a7.3 7.3 0 01-2.1-1.3 8 8 0 01-1.5-1.9c-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.5s0-.4-.1-.5-.6-1.5-.8-2-.4-.4-.6-.5h-.5c-.2 0-.5.1-.7.3a2.9 2.9 0 00-.9 2.1c0 1.2.9 2.4 1 2.6.1.2 1.8 2.8 4.4 3.9a14.6 14.6 0 001.5.5 3.5 3.5 0 001.6.1c.5-.1 1.6-.6 1.8-1.3s.2-1.2.2-1.3-.2-.2-.4-.3z"/></svg>
+            Enviar para o WhatsApp
+          </button>
+          <p class="form-note">Ao enviar, seus dados serão organizados em uma mensagem e você será direcionado ao WhatsApp da IJ Tec para concluir o contato.</p>
+        </form>
+
+        <div class="direct-panel">
+          <div class="direct-card reveal">
+            <h3>Prefere falar direto?</h3>
+            <p>Fale agora mesmo com nossa equipe pelo WhatsApp, sem precisar preencher o formulário.</p>
+            <a href="#" id="directWhatsapp" class="btn btn-whatsapp" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11 11 0 003.6 17L2 22l5.2-1.6a11 11 0 0013.3-16.9zM12 20a9 9 0 01-4.6-1.3l-.3-.2-3.1.9.9-3-.2-.3A9 9 0 1112 20z"/></svg>
+              Falar no WhatsApp
+            </a>
+          </div>
+          <div class="direct-card reveal">
+            <h3>Outros canais</h3>
+            <div class="contact-lines">
+              <a href="tel:+5513998044111"><span class="lbl">Telefone</span> (13) 99804-4111</a>
+              <a href="mailto:ijtech.ti@gmail.com"><span class="lbl">E-mail</span> ijtech.ti@gmail.com</a>
+              <div><span class="lbl">Horário</span> Seg. a sex., 9h às 18h</div>
+              <div><span class="lbl">Área</span> Atendimento em toda a Baixada Santista e região</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <div class="brand-mark">IJ <span>TEC</span></div>
+      <p>Implantação de Portaria remota, CFTV e infraestrutura de segurança para condomínios, empresas e comércios.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#inicio">Início</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#diferenciais">Diferenciais</a>
+      <a href="#contato">Fale conosco</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    © 2026 IJ Tec — Tecnologia e Automação. Todos os direitos reservados.
+  </div>
+</footer>
+
+<script>
+  // ---- CONFIG: replace with the real WhatsApp number (country + area + number, no symbols) ----
+  const WHATSAPP_NUMBER = "5513900000000";
+
+  const nav = document.getElementById('siteNav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  const burger = document.getElementById('burgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const closeMenu = document.getElementById('closeMenu');
+  burger.addEventListener('click', () => mobileMenu.classList.add('open'));
+  closeMenu.addEventListener('click', () => mobileMenu.classList.remove('open'));
+  mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
+
+  const sections = ['inicio','sobre','servicos','diferenciais','contato'].map(id => document.getElementById(id));
+  const navLinks = document.querySelectorAll('.nav-tabs a, .mobile-menu a');
+  const spyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  sections.forEach(s => s && spyObserver.observe(s));
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  document.getElementById('directWhatsapp').href =
+    `https://wa.me/${13998044111}?text=${encodeURIComponent('Olá! Gostaria de falar sobre implantação de portaria remota e segurança com a IJ Tec.')}`;
+
+  document.getElementById('orcamentoForm').addEventListener('submit', function(e){
+    e.preventDefault();
+
+    const nome = document.getElementById('nome').value.trim();
+    const telefone = document.getElementById('telefone').value.trim();
+    const tipo = document.querySelector('input[name="tipo"]:checked').value;
+    const cameras = document.getElementById('cameras').value.trim();
+    const mensagem = document.getElementById('mensagem').value.trim();
+    const interesses = Array.from(document.querySelectorAll('#interesseGroup input:checked')).map(i => i.value);
+
+    let texto = `Olá! Gostaria de solicitar um pré-orçamento de segurança e portaria remota.\n\n`;
+    texto += `*Nome:* ${nome}\n`;
+    texto += `*Telefone:* ${telefone}\n`;
+    texto += `*Tipo de local:* ${tipo}\n`;
+    if (cameras) texto += `*Número aproximado de câmeras:* ${cameras}\n`;
+    if (interesses.length) texto += `*Áreas de interesse:* ${interesses.join(', ')}\n`;
+    if (mensagem) texto += `*Mensagem:* ${mensagem}\n`;
+
+    const url = `https://wa.me/${13998044111}?text=${encodeURIComponent(texto)}`;
+    window.open(url, '_blank');
+  });
+</script>
+
+</body>
+</html>
